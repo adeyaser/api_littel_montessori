@@ -1,0 +1,231 @@
+openapi: 3.0.0
+info:
+  title: Little Home Mobile API - Wali Murid
+  description: REST API endpoint untuk aplikasi mobile (Role 5 / Wali Murid) pada sistem Little Home.
+  version: 1.0.0
+servers:
+  - url: http://localhost/little_home_api
+    description: Local Server Utama
+tags:
+  - name: Authentication
+    description: Autentikasi Pengguna Wali Murid
+  - name: Dashboard
+    description: Menu Utama dan Rangkuman Data Wali Murid
+  - name: Monitoring
+    description: Pemantauan Siswa dan Aktivitas (Pencatatan, Posting)
+  - name: Keuangan
+    description: Tagihan Pembayaran Siswa
+  - name: Layanan Umum
+    description: Testimoni dan Pencarian
+
+paths:
+  /walimurid/login:
+    post:
+      tags:
+        - Authentication
+      summary: Autentikasi Wali Murid 
+      description: Validasi menggunakan alamat email dan kata sandi yang dikirimkan melalui form-data.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: joko@example.com
+                password:
+                  type: string
+                  format: password
+                  example: "*****"
+      responses:
+        '200':
+          description: OK - Login Berhasil. Mengembalikan data info pengguna beserta data profil murid.
+        '400':
+          description: Parameter Tidak Lengkap
+        '401':
+          description: Kata sandi salah
+        '404':
+          description: Akun belum terdaftar atau tidak aktif
+          
+  /walimurid/dashboard:
+    get:
+      tags:
+        - Dashboard
+      summary: Mendapatkan data dashboard lengkap
+      description: Menerima ringkasan profil anak, tagihan pending bulanan, rangkuman 3 (tiga) posting aktivitas terakhir dan 3 pencatatan dari ruang kelas.
+      parameters:
+        - in: query
+          name: id_anak
+          schema:
+            type: integer
+          required: true
+          description: ID murid dari Database
+      responses:
+        '200':
+          description: Object JSON memuat rangkuman `murid`, tagihan, serta list data observasi
+        '400':
+          description: id_anak tidak dikirimkan
+
+  /walimurid/pencatatan:
+    get:
+      tags:
+        - Monitoring
+      summary: List Riwayat Pencatatan (Perkembangan)
+      description: Menarik rekaman keseharian (Rencana Pembelajaran & Observasi Anak) yang ditulis oleh guru.
+      parameters:
+        - in: query
+          name: id_anak
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Data list pencatatan
+
+  /walimurid/posting:
+    get:
+      tags:
+        - Monitoring
+      summary: Tinjauan Posting Kelas
+      description: Tarik seluruh posting gambar galeri atau aktivitas kegiatan dengan foto/video anak.
+      parameters:
+        - in: query
+          name: id_anak
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Object JSON array post
+
+  /walimurid/tagihan:
+    get:
+      tags:
+        - Keuangan
+      summary: Daftar Nota Penagihan Siswa 
+      description: Daftar histoy yang ada dalam tth_pemasukan berdasarkan anak
+      parameters:
+        - in: query
+          name: id_anak
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Array dari Tagihan Keuangan
+
+  /walimurid/testimoni:
+    get:
+      tags:
+        - Layanan Umum
+      summary: Lihat List Testimoni Public
+      responses:
+        '200':
+          description: Array of Object Testimoni
+    post:
+      tags:
+        - Layanan Umum
+      summary: Kirim Feedback Testimoni
+      description: Mengunggah tanggapan (Membutuhkan Approval / Validation "status=0" pada database awal)
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - nama
+                - testimoni
+              properties:
+                nama:
+                  type: string
+                jabatan:
+                  type: string
+                  description: Optional (Default akan disetel "Wali Murid")
+                testimoni:
+                  type: string
+      responses:
+        '200':
+          description: Testimoni Disimpan
+        '400':
+          description: Parameter Tidak Lengkap/Kosong
+
+  /walimurid/search:
+    get:
+      tags:
+        - Layanan Umum
+      summary: Global Search Mobile 
+      description: Memilah-milah antara posting kelas dan pencatatan (Log harian observasi siswa)
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+          required: true
+          description: Kata Kunci
+        - in: query
+          name: id_anak
+          schema:
+            type: integer
+          required: true
+          description: ID anak dari murid
+      responses:
+        '200':
+          description: Array JSON pemilah hasil pencarian
+  /walimurid/komentar:
+    get:
+      tags:
+        - Monitoring
+      summary: Lihat Komentar pada Posting
+      description: Dapatkan semua riwayat komentar berdasarkan ID Posting Kelas
+      parameters:
+        - in: query
+          name: post_id
+          schema:
+            type: integer
+          required: true
+          description: ID dari tpost
+      responses:
+        '200':
+          description: Array of Komentar
+    post:
+      tags:
+        - Monitoring
+      summary: Berikan Komentar pada posting
+      description: Mengunggah komentar dari Wali Murid ke posting aktivitas
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - post_id
+                - author
+                - content
+              properties:
+                post_id:
+                  type: integer
+                author:
+                  type: string
+                content:
+                  type: string
+      responses:
+        '200':
+          description: Komentar ditambahkan
+        '400':
+          description: Parameter Tidak Lengkap/Kosong
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - bearerAuth: []

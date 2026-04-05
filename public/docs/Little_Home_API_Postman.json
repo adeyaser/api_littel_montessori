@@ -1,0 +1,411 @@
+{
+"info": {
+"_postman_id": "aa1c56ad-5136-4114-bede-436f90117094",
+"name": "Little Home Wali Murid API",
+"description": "Kumpulan service API Role Wali Murid (Role ID 5) untuk penggunaan Mobile App",
+"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+},
+"item": [
+{
+"name": "Auth",
+"item": [
+{
+"name": "Login",
+"event": [
+{
+"listen": "test",
+"script": {
+"exec": [
+"var jsonData = JSON.parse(responseBody);",
+"if(jsonData.token) {",
+"    pm.environment.set(\"jwt_token\", jsonData.token);",
+"}"
+],
+"type": "text/javascript"
+}
+}
+],
+"request": {
+"method": "POST",
+"header": [],
+"body": {
+"mode": "urlencoded",
+"urlencoded": [
+{
+"key": "email",
+"value": "joko@example.com",
+"type": "text"
+},
+{
+"key": "password",
+"value": "123456",
+"type": "text"
+}
+]
+},
+"url": {
+"raw": "{{base_url}}/walimurid/login",
+"host": [
+"{{base_url}}"
+],
+"path": [
+"walimurid",
+"login"
+]
+},
+"description": "Masukkan credensial dari tabel users"
+},
+"response": []
+}
+]
+},
+{
+"name": "Dashboard",
+"item": [
+{
+"name": "Dashboard Data",
+"request": {
+"auth": {
+"type": "bearer",
+"bearer": [
+{
+"key": "token",
+"value": "{{jwt_token}}",
+"type": "string"
+}
+]
+},
+"method": "GET",
+"header": [],
+"url": {
+"raw": "{{base_url}}/walimurid/dashboard?id_anak=1",
+"host": [
+"{{base_url}}"
+],
+"path": [
+"walimurid",
+"dashboard"
+],
+"query": [
+{
+"key": "id_anak",
+"value": "1"
+}
+]
+}
+},
+"response": []
+}
+]
+},
+{
+"name": "Monitoring",
+"item": [
+{
+"name": "Pencatatan",
+"request": {
+"auth": {
+"type": "bearer",
+"bearer": [
+{
+"key": "token",
+"value": "{{jwt_token}}",
+"type": "string"
+}
+]
+},
+"method": "GET",
+"header": [],
+"url": {
+"raw": "{{base_url}}/walimurid/pencatatan?id_anak=1",
+"host": [
+"{{base_url}}"
+],
+"path": [
+"walimurid",
+"pencatatan"
+],
+"query": [
+{
+"key": "id_anak",
+"value": "1"
+}
+]
+}
+},
+"response": []
+},
+{
+"name": "Posting Aktivitas",
+"request": {
+"auth": {
+"type": "bearer",
+"bearer": [
+{
+"key": "token",
+"value": "{{jwt_token}}",
+"type": "string"
+}
+]
+},
+"method": "GET",
+"header": [],
+"url": {
+"raw": "{{base_url}}/walimurid/posting?id_anak=1",
+"host": [
+"{{base_url}}"
+],
+"path": [
+"walimurid",
+"posting"
+],
+"query": [
+{
+"key": "id_anak",
+"value": "1"
+}
+]
+}
+},
+"response": []
+},
+{
+"name": "Komentar Post GET",
+"request": {
+"auth": {
+"type": "bearer",
+"bearer": [
+{
+"key": "token",
+"value": "{{jwt_token}}",
+"type": "string"
+}
+]
+},
+"method": "GET",
+"header": [],
+"url": {
+"raw": "{{base_url}}/walimurid/komentar?post_id=5945",
+"host": [
+"{{base_url}}"
+],
+"path": [
+"walimurid",
+"komentar"
+],
+"query": [
+{
+"key": "post_id",
+"value": "5945"
+}
+]
+}
+},
+"response": []
+},
+{
+"name": "Komentar POST",
+"request": {
+"auth": {
+"type": "bearer",
+"bearer": [
+{
+"key": "token",
+"value": "{{jwt_token}}",
+"type": "string"
+}
+]
+},
+"method": "POST",
+"header": [],
+"body": {
+"mode": "urlencoded",
+"urlencoded": [
+{
+"key": "post_id",
+"value": "5945",
+"type": "text"
+},
+{
+"key": "content",
+"value": "Wah, hebat sekali pembelajarannya Miss!",
+"type": "text"
+}
+]
+},
+"url": {
+"raw": "{{base_url}}/walimurid/komentar",
+"host": [
+"{{base_url}}"
+],
+"path": [
+"walimurid",
+"komentar"
+]
+}
+},
+"response": []
+}
+]
+},
+{
+"name": "Keuangan",
+"item": [
+{
+"name": "Tagihan Anak",
+"request": {
+"auth": {
+"type": "bearer",
+"bearer": [
+{
+"key": "token",
+"value": "{{jwt_token}}",
+"type": "string"
+}
+]
+},
+"method": "GET",
+"header": [],
+"url": {
+"raw": "{{base_url}}/walimurid/tagihan?id_anak=1",
+"host": [
+"{{base_url}}"
+],
+"path": [
+"walimurid",
+"tagihan"
+],
+"query": [
+{
+"key": "id_anak",
+"value": "1"
+}
+]
+}
+},
+"response": []
+}
+]
+},
+{
+"name": "Layanan Umum",
+"item": [
+{
+"name": "Testimoni GET",
+"request": {
+"auth": {
+"type": "bearer",
+"bearer": [
+{
+"key": "token",
+"value": "{{jwt_token}}",
+"type": "string"
+}
+]
+},
+"method": "GET",
+"header": [],
+"url": {
+"raw": "{{base_url}}/walimurid/testimoni",
+"host": [
+"{{base_url}}"
+],
+"path": [
+"walimurid",
+"testimoni"
+]
+}
+},
+"response": []
+},
+{
+"name": "Testimoni POST",
+"request": {
+"auth": {
+"type": "bearer",
+"bearer": [
+{
+"key": "token",
+"value": "{{jwt_token}}",
+"type": "string"
+}
+]
+},
+"method": "POST",
+"header": [],
+"body": {
+"mode": "urlencoded",
+"urlencoded": [
+{
+"key": "nama",
+"value": "Bapak Joko",
+"type": "text"
+},
+{
+"key": "testimoni",
+"value": "Sangat senang anak saya belajar di sini.",
+"type": "text"
+}
+]
+},
+"url": {
+"raw": "{{base_url}}/walimurid/testimoni",
+"host": [
+"{{base_url}}"
+],
+"path": [
+"walimurid",
+"testimoni"
+]
+}
+},
+"response": []
+},
+{
+"name": "Search Global",
+"request": {
+"auth": {
+"type": "bearer",
+"bearer": [
+{
+"key": "token",
+"value": "{{jwt_token}}",
+"type": "string"
+}
+]
+},
+"method": "GET",
+"header": [],
+"url": {
+"raw": "{{base_url}}/walimurid/search?q=belajar&id_anak=1",
+"host": [
+"{{base_url}}"
+],
+"path": [
+"walimurid",
+"search"
+],
+"query": [
+{
+"key": "q",
+"value": "belajar"
+},
+{
+"key": "id_anak",
+"value": "1"
+}
+]
+}
+},
+"response": []
+}
+]
+}
+],
+"variable": [
+{
+"key": "base_url",
+"value": "http://localhost/little_home_api"
+}
+]
+}
