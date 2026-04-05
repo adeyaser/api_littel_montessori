@@ -273,28 +273,27 @@ class Walimurid extends RestController {
      */
     public function testimoni_post()
     {
-        $this->_verify_jwt(); // Wajib JWT
+        $jwt = $this->_verify_jwt(); // Wajib JWT
 
-        $nama       = $this->post('nama');
-        $jabatan    = $this->post('jabatan') ?: 'Wali Murid';
-        $testimoni  = $this->post('testimoni');
-        
-        if (empty($nama) || empty($testimoni)) {
-             return $this->response(['status' => FALSE, 'message' => 'Nama dan Testimoni wajib diisi'], 400);
+        // Deteksi key dari body request untuk menyesuaikan ke database ('name', 'profesi', 'description')
+        $name        = $this->post('name') ?? $this->post('nama');
+        $profesi     = $this->post('profesi') ?? ($this->post('jabatan') ?: 'Wali Murid');
+        $description = $this->post('description') ?? $this->post('testimoni');
+
+        if (empty($name) || empty($description)) {
+             return $this->response(['status' => FALSE, 'message' => 'Parameter name dan description wajib diisi'], 400);
         }
 
         $data = [
-            'nama'      => $nama,
-            'jabatan'   => $jabatan,
-            'testimoni' => $testimoni,
-            'status'    => 0,
-            'img'       => 'default.png'
+            'name'        => $name,
+            'profesi'     => $profesi,
+            'description' => $description,
+            'id_user'     => $jwt->uid,
+            'img'         => 'default.png'
         ];
-
+        
         if ($this->db->insert('testimonial', $data)) {
-            $this->response(['status' => TRUE, 'message' => 'Testimoni berhasil disimpan dan menunggu review'], 200);
-        } else {
-            $this->response(['status' => FALSE, 'message' => 'Gagal menyimpan testimoni'], 500);
+            $this->response(['status' => TRUE, 'message' => 'Testimoni berhasil disimpan'], 200);
         }
     }
 
