@@ -425,7 +425,7 @@ class Walimurid extends RestController {
 
         // Jika foto menggunakan URL relatif (bukan http), kita konversi jadi absolute URL
         if (!empty($user['img']) && !preg_match("/^http/", $user['img'])) {
-            $user['img'] = 'https://galerilittlehomemontessori.my.id/uploads/galeri/' . $user['img']; // Sesuaikan folder di server Anda
+            $user['img'] = 'https://littlehomemontessori.my.id/assets/img/profile/' . $user['img']; // Sesuaikan folder di server Anda
         }
 
         // 2. Ambil data keluarga pengasuh dari tabel keluarga_pengasuh
