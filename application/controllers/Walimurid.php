@@ -210,7 +210,7 @@ class Walimurid extends RestController {
         $murid_id = $this->get('id_anak');
         if (!$murid_id) return $this->response(['status' => FALSE, 'message' => 'id_anak diperlukan'], 400);
 
-        $this->db->like('id_anak', $murid_id);
+        $this->db->where('id_anak', $murid_id);
         $this->db->order_by('tanggal', 'DESC');
         $posts = $this->db->get('tpost')->result_array();
 
@@ -284,16 +284,42 @@ class Walimurid extends RestController {
              return $this->response(['status' => FALSE, 'message' => 'Parameter name dan description wajib diisi'], 400);
         }
 
+        $img = 'default.png';
+
+        // Proses upload file 'img'
+        if (!empty($_FILES['img']['name'])) {
+            $config['upload_path']   = './uploads/testimoni/';
+            $config['allowed_types'] = 'gif|jpg|jpeg|png';
+            $config['max_size']      = 2048; // Max 2MB
+            $config['file_name']     = time() . '_' . $_FILES['img']['name'];
+
+            $this->load->library('upload', $config);
+
+            // Buat folder jika belum ada
+            if (!is_dir($config['upload_path'])) {
+                mkdir($config['upload_path'], 0777, true);
+            }
+
+            if ($this->upload->do_upload('img')) {
+                $uploadData = $this->upload->data();
+                $img = $uploadData['file_name'];
+            } else {
+                return $this->response(['status' => FALSE, 'message' => strip_tags($this->upload->display_errors())], 400);
+            }
+        }
+
         $data = [
             'name'        => $name,
             'profesi'     => $profesi,
             'description' => $description,
             'id_user'     => $jwt->uid,
-            'img'         => 'default.png'
+            'img'         => $img
         ];
         
         if ($this->db->insert('testimonial', $data)) {
             $this->response(['status' => TRUE, 'message' => 'Testimoni berhasil disimpan'], 200);
+        } else {
+            $this->response(['status' => FALSE, 'message' => 'Gagal menyimpan testimoni'], 500);
         }
     }
 

@@ -12,7 +12,7 @@
   <script>
     window.onload = () => {
       window.ui = SwaggerUIBundle({
-        url: "api.yaml",
+        url: "api.yaml?v=" + new Date().getTime(),
         dom_id: '#swagger-ui',
       });
     };
