@@ -380,4 +380,49 @@ class Walimurid extends RestController {
             $this->response(['status' => FALSE, 'message' => 'Gagal menambahkan komentar'], 500);
         }
     }
+
+    /**
+     * 10. PROFILE WALI MURID
+     * Method: GET /walimurid/profile
+     */
+    public function profile_get()
+    {
+        $jwt = $this->_verify_jwt(); // Wajib JWT
+
+        // 1. Ambil data akun wali murid dari tabel users (Tanpa password)
+        $this->db->select('id, nama, telepon, email, alamat, perusahaan, negara, job, img, tentang, status_aktif, id_pengguna');
+        $user = $this->db->get_where('users', ['id' => $jwt->uid])->row_array();
+
+        if (!$user) {
+            return $this->response(['status' => FALSE, 'message' => 'Profil Wali Murid tidak ditemukan'], 404);
+        }
+
+        // Jika foto menggunakan URL relatif (bukan http), kita konversi jadi absolute URL
+        if (!empty($user['img']) && !preg_match("/^http/", $user['img'])) {
+            $user['img'] = 'https://galerilittlehomemontessori.my.id/uploads/galeri/' . $user['img']; // Sesuaikan folder di server Anda
+        }
+
+        // 2. Ambil data keluarga pengasuh dari tabel keluarga_pengasuh
+        $keluarga = null;
+        $murid = null;
+
+        if (!empty($user['id_pengguna'])) {
+            $keluarga = $this->db->get_where('keluarga_pengasuh', ['id' => $user['id_pengguna']])->row_array();
+
+            // 3. Ambil data anak (murid)
+            if (!empty($keluarga['murid_id'])) {
+                $murid = $this->db->get_where('murid', ['id' => $keluarga['murid_id']])->row_array();
+            }
+        }
+
+        $this->response([
+            'status' => TRUE,
+            'message'=> 'Berhasil memuat profil',
+            'data'   => [
+                'user'     => $user,
+                'keluarga' => $keluarga,
+                'anak'     => $murid
+            ]
+        ], 200);
+    }
 }
