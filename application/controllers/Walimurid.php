@@ -4,7 +4,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 use chriskacerguis\RestServer\RestController;
 use \Firebase\JWT\JWT;
 
-class WaliMurid extends RestController {
+class Walimurid extends RestController {
 
     // KUNCI RAHASIA UNTUK JWT - Pastikan Anda menggantinya bila masuk production
     private $jwt_secret_key = 'rahasia_little_home_super_aman_123';
