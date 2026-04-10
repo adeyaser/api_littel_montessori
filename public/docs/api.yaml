@@ -92,24 +92,62 @@ paths:
     get:
       tags:
         - Monitoring
-      summary: Tinjauan Posting Kelas
-      description: Tarik seluruh posting gambar galeri atau aktivitas kegiatan dengan foto/video anak.
+      summary: Tinjauan Posting Kelas (Dengan Pagination)
+      description: Tarik posting gambar galeri atau aktivitas kegiatan dengan foto/video anak. Menampilkan 3 data per halaman dengan pagination metadata.
       parameters:
         - in: query
           name: id_anak
           schema:
             type: integer
           required: true
+          description: ID murid dari Database
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          required: false
+          description: Nomor halaman (default 1, minimum 1). Setiap halaman menampilkan 3 posting.
       responses:
         '200':
-          description: Object JSON array post
+          description: Object JSON array post dengan pagination metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  pagination:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                        example: 1
+                      per_page:
+                        type: integer
+                        example: 3
+                      total_pages:
+                        type: integer
+                        example: 5
+                      total_data:
+                        type: integer
+                        example: 15
+                  data:
+                    type: array
+                    items:
+                      type: object
+        '400':
+          description: id_anak tidak dikirimkan atau parameter invalid
 
   /walimurid/tagihan:
     get:
       tags:
         - Keuangan
       summary: Daftar Nota Penagihan Siswa 
-      description: Daftar histoy yang ada dalam tth_pemasukan berdasarkan anak
+      description: Daftar history tagihan dari tth_pemasukan berdasarkan anak. Setiap item menyertakan id_tagihan dan no_nota.
       parameters:
         - in: query
           name: id_anak
@@ -119,6 +157,50 @@ paths:
       responses:
         '200':
           description: Array dari Tagihan Keuangan
+
+  /walimurid/tagihan_detail:
+    get:
+      tags:
+        - Keuangan
+      summary: Detail Nota Penagihan Siswa
+      description: Mengambil 1 data header tagihan dari tth_pemasukan beserta list detailnya dari ttd_pemasukan berdasarkan id_tagihan.
+      parameters:
+        - in: query
+          name: id_tagihan
+          schema:
+            type: integer
+          required: true
+          description: ID header tagihan pada tabel tth_pemasukan
+        - in: query
+          name: id_anak
+          schema:
+            type: integer
+          required: false
+          description: Optional, untuk validasi bahwa tagihan milik anak tertentu
+      responses:
+        '200':
+          description: Detail tagihan ditemukan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      header:
+                        type: object
+                      detail:
+                        type: array
+                        items:
+                          type: object
+        '400':
+          description: id_tagihan tidak dikirimkan
+        '404':
+          description: Detail tagihan tidak ditemukan
 
   /walimurid/testimoni:
     get:

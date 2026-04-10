@@ -7,14 +7,17 @@ use \Firebase\JWT\JWT;
 class Walimurid extends RestController {
 
     // KUNCI RAHASIA UNTUK JWT - Pastikan Anda menggantinya bila masuk production
-    private $jwt_secret_key = 'rahasia_little_home_super_aman_123';
+        private $jwt_secret_key = JWT_SECRET_KEY;
 
     public function __construct()
     {
         // Headers for CORS
-        header('Access-Control-Allow-Origin: *');
-        header('Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, Access-Control-Request-Method');
-        header('Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE');
+            // Headers for CORS - Gunakan konstanta untuk consistency
+            if (ENABLE_CORS) {
+                header('Access-Control-Allow-Origin: ' . CORS_ALLOW_ORIGIN);
+                header('Access-Control-Allow-Headers: ' . CORS_ALLOW_HEADERS);
+                header('Access-Control-Allow-Methods: ' . CORS_ALLOW_METHODS);
+            }
         
         $method = $_SERVER['REQUEST_METHOD'];
         if ($method == "OPTIONS") {
@@ -87,7 +90,7 @@ class Walimurid extends RestController {
                 $payload = [
                     'iss'      => base_url(), // Issuer (yang menerbitkan)
                     'iat'      => time(), // Waktu token dibuat
-                    'exp'      => time() + (60 * 60 * 24 * 7), // Expired dalam 7 hari
+                    'exp'      => time() + (60 * 60 * 24 * JWT_EXPIRATION_DAYS),
                     'uid'      => $user['id'],
                     'email'    => $user['email'],
                     'role_id'  => $user['role_id'],
@@ -135,7 +138,7 @@ class Walimurid extends RestController {
         $murid_id = $this->get('id_anak');
         if (!$murid_id) return $this->response(['status' => FALSE, 'message' => 'id_anak diperlukan'], 400);
 
-        $murid = $this->db->get_where('murid', ['id' => $murid_id])->row_array();
+        $murid = $this->db->where('murid', ['id' => $murid_id])->row_array();
         if (!$murid) return $this->response(['status' => FALSE, 'message' => 'Anak tidak ditemukan'], 404);
 
         $this->db->where('id_anak', $murid_id);
@@ -153,7 +156,7 @@ class Walimurid extends RestController {
             $post_content = $this->db->get_where('tpost_content', ['tpost_id' => $post['id']])->result_array();
             foreach ($post_content as &$content) {
                 if (!empty($content['file_url'])) {
-                    $content['file_url'] = 'https://galerilittlehomemontessori.my.id/uploads/' . $content['file_url'];
+                    $content['file_url'] = UPLOAD_BASE_URL . '/' . $content['file_url'];
                 }
             }
             $post['content'] = $post_content;
@@ -200,8 +203,10 @@ class Walimurid extends RestController {
     }
 
     /**
-     * 4. DATA POSTING
+     * 4. DATA POSTING WITH PAGINATION
      * Method: GET /walimurid/posting
+     * Parameters: id_anak (required), page (optional, default: 1, min: 1)
+     * Example: /walimurid/posting?id_anak=123&page=1
      */
     public function posting_get()
     {
@@ -210,17 +215,33 @@ class Walimurid extends RestController {
         $murid_id = $this->get('id_anak');
         if (!$murid_id) return $this->response(['status' => FALSE, 'message' => 'id_anak diperlukan'], 400);
 
+        // Ambil parameter halaman dari request URL, default ke 1
+        $page = $this->get('page') ? intval($this->get('page')) : 1;
+        $page = $page < 1 ? 1 : $page; // Jika page < 1, set ke 1
+
+        $per_page = 3; // Jumlah data per halaman
+        $offset = ($page - 1) * $per_page;
+
+        // Hitung total jumlah posting untuk child ini
+        $total_posts = $this->db->where('id_anak', $murid_id)->count_all_results('tpost');
+
+        // Hitung total halaman
+        $total_pages = ceil($total_posts / $per_page);
+
+        // Query dengan pagination
         $this->db->where('id_anak', $murid_id);
         $this->db->order_by('tanggal', 'DESC');
+        $this->db->limit($per_page, $offset);
         $posts = $this->db->get('tpost')->result_array();
 
+        // Proses setiap posting untuk menambah content dan file URL
         foreach ($posts as &$post) {
             $post_content = $this->db->get_where('tpost_content', ['tpost_id' => $post['id']])->result_array();
             
             // Tambahkan URL lengkap untuk file gambar
             foreach ($post_content as &$content) {
                 if (!empty($content['file_url'])) {
-                    $content['file_url'] = 'https://galerilittlehomemontessori.my.id/uploads/' . $content['file_url'];
+                    $content['file_url'] = UPLOAD_BASE_URL . '/' . $content['file_url'];
                 }
             }
             $post['content'] = $post_content;
@@ -233,7 +254,17 @@ class Walimurid extends RestController {
             }
         }
 
-        $this->response(['status' => TRUE, 'data' => $posts], 200);
+        // Response dengan pagination metadata
+        $this->response([
+            'status' => TRUE,
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $per_page,
+                'total_pages' => $total_pages,
+                'total_data' => $total_posts
+            ],
+            'data' => $posts
+        ], 200);
     }
 
     /**
@@ -251,7 +282,78 @@ class Walimurid extends RestController {
         $this->db->order_by('tanggal', 'DESC');
         $tagihan = $this->db->get('tth_pemasukan')->result_array();
 
+        foreach ($tagihan as &$item) {
+            if (!isset($item['id_tagihan'])) {
+                $item['id_tagihan'] = $item['id'] ?? null;
+            }
+            if (!isset($item['no_nota'])) {
+                $item['no_nota'] = $item['no_nota'] ?? null;
+            }
+        }
+
         $this->response(['status' => TRUE, 'data' => $tagihan], 200);
+    }
+
+    /**
+     * 5.1 DETAIL TAGIHAN ANAK (KEUANGAN / PEMASUKAN)
+     * Method: GET /walimurid/tagihan_detail
+     */
+    public function tagihan_detail_get()
+    {
+        $this->_verify_jwt(); // Wajib JWT
+
+        $tagihan_id = $this->get('id_tagihan') ?: $this->get('id');
+        $murid_id   = $this->get('id_anak');
+
+        if (!$tagihan_id) {
+            return $this->response(['status' => FALSE, 'message' => 'id_tagihan diperlukan'], 400);
+        }
+
+        $this->db->where('id', $tagihan_id);
+        if ($murid_id) {
+            $this->db->where('id_anak', $murid_id);
+        }
+
+        // Header diambil dari tabel tth_pemasukan
+        $header = $this->db->get('tth_pemasukan')->row_array();
+
+        if (!$header) {
+            return $this->response(['status' => FALSE, 'message' => 'Detail tagihan tidak ditemukan'], 404);
+        }
+
+        // Detail diambil dari tabel ttd_pemasukan dengan deteksi kolom relasi yang tersedia
+        $detail_fk_candidates = [
+            'tth_pemasukan_id',
+            'id_tth_pemasukan',
+            'pemasukan_id',
+            'id_pemasukan',
+            'header_id',
+            'id_header',
+            'tth_id'
+        ];
+
+        $detail_fk = null;
+        foreach ($detail_fk_candidates as $candidate) {
+            if ($this->db->field_exists($candidate, 'ttd_pemasukan')) {
+                $detail_fk = $candidate;
+                break;
+            }
+        }
+
+        $details = [];
+        if ($detail_fk !== null) {
+            $this->db->where($detail_fk, $header['id']);
+            $this->db->order_by('id', 'ASC');
+            $details = $this->db->get('ttd_pemasukan')->result_array();
+        }
+
+        $this->response([
+            'status' => TRUE,
+            'data'   => [
+                'header' => $header,
+                'detail' => $details
+            ]
+        ], 200);
     }
 
     /**
